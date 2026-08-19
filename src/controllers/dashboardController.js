@@ -16,12 +16,25 @@ const getDashboardStats = async (req, res) => {
       { id: 3, title: 'Total Admins', value: adminsCount.toString(), iconName: 'Users', trend: 'up', trendValue: '+0.0%' },
     ];
 
-    const recentActivity = [
-      { id: 1, action: 'New order', target: '#12341', time: '10m ago' },
-      { id: 2, action: 'New order', target: '#12342', time: '20m ago' },
-      { id: 3, action: 'New order', target: '#12343', time: '30m ago' },
-      { id: 4, action: 'New order', target: '#12344', time: '40m ago' },
-    ];
+    const recentJobs = await Job.find().sort({ createdAt: -1 }).limit(5);
+    
+    const timeAgo = (date) => {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      let interval = seconds / 86400;
+      if (interval > 1) return Math.floor(interval) + 'd ago';
+      interval = seconds / 3600;
+      if (interval > 1) return Math.floor(interval) + 'h ago';
+      interval = seconds / 60;
+      if (interval >= 1) return Math.floor(interval) + 'm ago';
+      return 'Just now';
+    };
+
+    const recentActivity = recentJobs.map(job => ({
+      id: job._id,
+      action: 'New job posted:',
+      target: job.title,
+      time: timeAgo(job.createdAt)
+    }));
 
     res.json({
       stats,

@@ -7,7 +7,9 @@ const {
   getJobCategories,
   createJob,
   updateJob,
-  deleteJob
+  deleteJob,
+  applyJob,
+  uploadResume
 } = require('../controllers/jobController');
 
 router.route('/')
@@ -16,6 +18,9 @@ router.route('/')
 
 router.route('/categories')
   .get(getJobCategories);
+
+router.route('/:id/apply')
+  .post(uploadResume.single('resume'), applyJob);
 
 router.route('/:id')
   .get(getJobById)

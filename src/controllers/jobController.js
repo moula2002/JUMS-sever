@@ -1,4 +1,37 @@
 const Job = require('../models/Job');
+const sendEmail = require('../utils/sendEmail');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Setup multer specifically for resumes (PDF, DOCX)
+const resumeUploadDir = path.join(__dirname, '../../uploads/resumes');
+if (!fs.existsSync(resumeUploadDir)) {
+  fs.mkdirSync(resumeUploadDir, { recursive: true });
+}
+
+const resumeStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, resumeUploadDir),
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+});
+
+const resumeFilter = (req, file, cb) => {
+  if (
+    file.mimetype === 'application/pdf' ||
+    file.mimetype === 'application/msword' ||
+    file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF and Word documents are allowed for resumes!'), false);
+  }
+};
+
+const uploadResume = multer({
+  storage: resumeStorage,
+  fileFilter: resumeFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
 
 // @desc    Get all jobs with search and pagination
 // @route   GET /api/jobs
@@ -46,7 +79,7 @@ const getJobs = async (req, res) => {
 const getJobById = async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
-    
+
     if (job) {
       res.json(job);
     } else {
@@ -68,9 +101,9 @@ const getJobCategories = async (req, res) => {
       { $project: { name: '$_id', count: 1, _id: 0 } },
       { $sort: { count: -1 } }
     ]);
-    
+
     const totalJobs = await Job.countDocuments({ status: 'Active' });
-    
+
     res.json({
       total: totalJobs,
       categories
@@ -89,7 +122,7 @@ const createJob = async (req, res) => {
   try {
     const jobData = { ...req.body };
     const baseUrl = getBaseUrl(req);
-    
+
     // Convert empty strings to null to prevent CastError from FormData
     ['salaryMin', 'salaryMax', 'vacancies', 'applicationDeadline'].forEach(field => {
       if (jobData[field] === '') jobData[field] = null;
@@ -97,12 +130,12 @@ const createJob = async (req, res) => {
 
     // Parse stringified arrays
     if (jobData.skills && typeof jobData.skills === 'string') {
-      try { jobData.skills = JSON.parse(jobData.skills); } catch (e) {}
+      try { jobData.skills = JSON.parse(jobData.skills); } catch (e) { }
     }
     if (jobData.keywords && typeof jobData.keywords === 'string') {
-      try { jobData.keywords = JSON.parse(jobData.keywords); } catch (e) {}
+      try { jobData.keywords = JSON.parse(jobData.keywords); } catch (e) { }
     }
-    
+
     if (req.files) {
       if (req.files.image && req.files.image[0]) {
         jobData.image = `${baseUrl}/uploads/${req.files.image[0].filename}`;
@@ -127,7 +160,7 @@ const updateJob = async (req, res) => {
   try {
     const jobData = { ...req.body };
     const baseUrl = getBaseUrl(req);
-    
+
     // Convert empty strings to null to prevent CastError from FormData
     ['salaryMin', 'salaryMax', 'vacancies', 'applicationDeadline'].forEach(field => {
       if (jobData[field] === '') jobData[field] = null;
@@ -135,12 +168,12 @@ const updateJob = async (req, res) => {
 
     // Parse stringified arrays
     if (jobData.skills && typeof jobData.skills === 'string') {
-      try { jobData.skills = JSON.parse(jobData.skills); } catch (e) {}
+      try { jobData.skills = JSON.parse(jobData.skills); } catch (e) { }
     }
     if (jobData.keywords && typeof jobData.keywords === 'string') {
-      try { jobData.keywords = JSON.parse(jobData.keywords); } catch (e) {}
+      try { jobData.keywords = JSON.parse(jobData.keywords); } catch (e) { }
     }
-    
+
     if (req.files) {
       if (req.files.image && req.files.image[0]) {
         jobData.image = `${baseUrl}/uploads/${req.files.image[0].filename}`;
@@ -155,7 +188,7 @@ const updateJob = async (req, res) => {
       jobData,
       { new: true, runValidators: true }
     );
-    
+
     if (updatedJob) {
       res.json(updatedJob);
     } else {
@@ -184,11 +217,55 @@ const deleteJob = async (req, res) => {
   }
 };
 
+// @desc    Apply for a job (sends email)
+// @route   POST /api/jobs/:id/apply
+// @access  Public
+const applyJob = async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ message: 'Job not found' });
+
+    const { fullName, email, phone, experience, coverLetter } = req.body;
+
+    // Construct email content
+    const emailSubject = `New Job Application: ${job.title} - ${fullName}`;
+    const emailHtml = `
+      <h2>New Job Application Received</h2>
+      <p><strong>Job Title:</strong> ${job.title} (${job.department})</p>
+      <p><strong>Applicant Name:</strong> ${fullName}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>Phone:</strong> ${phone}</p>
+      <p><strong>Experience:</strong> ${experience}</p>
+      <br />
+      <h3>Cover Letter:</h3>
+      <p>${coverLetter ? coverLetter.replace(/\n/g, '<br/>') : 'No cover letter provided.'}</p>
+    `;
+
+    const emailOptions = {
+      email: job.companyEmail || process.env.EMAIL_USER, // Send to the company email or fallback to self
+      subject: emailSubject,
+      html: emailHtml,
+      attachments: req.file ? [{
+        filename: req.file.originalname,
+        path: req.file.path
+      }] : []
+    };
+
+    await sendEmail(emailOptions);
+
+    res.status(200).json({ message: 'Application submitted successfully!' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to submit application', error: error.message });
+  }
+};
+
 module.exports = {
   getJobs,
   getJobById,
   getJobCategories,
   createJob,
   updateJob,
-  deleteJob
+  deleteJob,
+  applyJob,
+  uploadResume
 };
