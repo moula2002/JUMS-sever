@@ -1,4 +1,5 @@
 const Job = require('../models/Job');
+const Application = require('../models/Application');
 const sendEmail = require('../utils/sendEmail');
 const multer = require('multer');
 const path = require('path');
@@ -225,6 +226,18 @@ const applyJob = async (req, res) => {
 
     const { fullName, email, phone, experience, coverLetter } = req.body;
 
+    // Save to Database
+    const application = await Application.create({
+      jobId: job._id,
+      jobTitle: job.title,
+      fullName,
+      email,
+      phone,
+      experience,
+      coverLetter,
+      resumePath: req.file ? req.file.path : null
+    });
+
     // Construct email content
     const emailSubject = `New Job Application: ${job.title} - ${fullName}`;
     const emailHtml = `
@@ -240,7 +253,7 @@ const applyJob = async (req, res) => {
     `;
 
     const emailOptions = {
-      email: job.companyEmail || process.env.EMAIL_USER, // Send to the company email or fallback to self
+      email: job.companyEmail || process.env.SMTP_TO_ADMIN, // Send to the company email or fallback to admin
       subject: emailSubject,
       html: emailHtml,
       attachments: req.file ? [{
@@ -251,8 +264,9 @@ const applyJob = async (req, res) => {
 
     await sendEmail(emailOptions);
 
-    res.status(200).json({ message: 'Application submitted successfully!' });
+    res.status(200).json({ message: 'Application submitted successfully!', data: application });
   } catch (error) {
+    console.error('Job Application Error:', error);
     res.status(500).json({ message: 'Failed to submit application', error: error.message });
   }
 };

@@ -6,6 +6,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const formRoutes = require('./routes/formRoutes');
 
 
 // Connect to database
@@ -25,6 +26,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/forms', formRoutes);
 
 
 app.get('/', (req, res) => {
