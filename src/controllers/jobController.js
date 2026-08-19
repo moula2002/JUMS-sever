@@ -3,12 +3,10 @@ const sendEmail = require('../utils/sendEmail');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
-// Setup multer specifically for resumes (PDF, DOCX)
-const resumeUploadDir = path.join(__dirname, '../../uploads/resumes');
-if (!fs.existsSync(resumeUploadDir)) {
-  fs.mkdirSync(resumeUploadDir, { recursive: true });
-}
+// Use OS temporary directory for Vercel compatibility
+const resumeUploadDir = os.tmpdir();
 
 const resumeStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, resumeUploadDir),
