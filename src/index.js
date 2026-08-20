@@ -30,9 +30,15 @@ app.use('/api/forms', formRoutes);
 
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to the JUMS Server!' });
+  res.json({ message: 'Welcome to the JUMS Server API!' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Conditionally listen on port if not in Vercel production
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running locally on port ${PORT}`);
+  });
+}
+
+// Export the app for Vercel Serverless environments
+module.exports = app;

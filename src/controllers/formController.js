@@ -33,15 +33,17 @@ const submitContactForm = async (req, res) => {
       <p>${message.replace(/\n/g, '<br/>')}</p>
     `;
 
+    console.log(`Sending contact form email for ${name}...`);
     await sendEmail({
       subject: `New Contact Submission: ${subject || 'No Subject'}`,
       html: emailHtml
     }); // uses SMTP_TO_ADMIN by default
+    console.log(`Contact form email sent for ${name}`);
 
     res.status(201).json({ message: 'Contact form submitted successfully!', data: contact });
   } catch (error) {
-    console.error('Contact Form Error:', error);
-    res.status(500).json({ message: 'Failed to submit contact form', error: error.message });
+    console.error('Contact Form Error (Vercel Log):', error.message, error.stack);
+    res.status(500).json({ message: 'Failed to submit contact form', error: error.message || 'Unknown Server Error' });
   }
 };
 
@@ -78,15 +80,17 @@ const submitPropertyEnquiry = async (req, res) => {
       <p>${message ? message.replace(/\n/g, '<br/>') : 'No message provided.'}</p>
     `;
 
+    console.log(`Sending property enquiry email for ${name}...`);
     await sendEmail({
       subject: `New Property Enquiry from ${name}`,
       html: emailHtml
     }); // uses SMTP_TO_ADMIN by default
+    console.log(`Property enquiry email sent for ${name}`);
 
     res.status(201).json({ message: 'Property enquiry submitted successfully!', data: enquiry });
   } catch (error) {
-    console.error('Property Enquiry Error:', error);
-    res.status(500).json({ message: 'Failed to submit property enquiry', error: error.message });
+    console.error('Property Enquiry Error (Vercel Log):', error.message, error.stack);
+    res.status(500).json({ message: 'Failed to submit property enquiry', error: error.message || 'Unknown Server Error' });
   }
 };
 

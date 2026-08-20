@@ -29,7 +29,7 @@ const resumeFilter = (req, file, cb) => {
 const uploadResume = multer({
   storage: resumeStorage,
   fileFilter: resumeFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 4.5 * 1024 * 1024 } // Vercel strict limit is 4.5MB for Serverless function bodies
 });
 
 // @desc    Get all jobs with search and pagination
@@ -262,12 +262,14 @@ const applyJob = async (req, res) => {
       }] : []
     };
 
+    console.log(`Sending job application email for ${fullName}...`);
     await sendEmail(emailOptions);
+    console.log(`Job application email sent for ${fullName}`);
 
     res.status(200).json({ message: 'Application submitted successfully!', data: application });
   } catch (error) {
-    console.error('Job Application Error:', error);
-    res.status(500).json({ message: 'Failed to submit application', error: error.message });
+    console.error('Job Application Error (Vercel Log):', error.message, error.stack);
+    res.status(500).json({ message: 'Failed to submit application', error: error.message || 'Unknown Server Error' });
   }
 };
 

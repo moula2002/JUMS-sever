@@ -10,7 +10,7 @@ const sendEmail = async (options) => {
   // Check both EMAIL_USER and SMTP_USER for compatibility
   const user = process.env.EMAIL_USER || process.env.SMTP_USER;
   const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
-  
+
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_PORT || 465,
