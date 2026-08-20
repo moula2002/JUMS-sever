@@ -87,8 +87,8 @@ const updateProfile = async (req, res) => {
     const admin = await Admin.findById(req.admin._id);
 
     if (admin) {
-      admin.firstName = req.body.firstName || admin.firstName;
-      admin.lastName = req.body.lastName || admin.lastName;
+      admin.firstName = req.body.firstName !== undefined ? req.body.firstName : admin.firstName || 'Admin';
+      admin.lastName = req.body.lastName !== undefined ? req.body.lastName : admin.lastName || 'User';
       admin.name = `${admin.firstName} ${admin.lastName}`.trim();
       admin.email = req.body.email || admin.email;
       if (req.body.bio !== undefined) admin.bio = req.body.bio;
