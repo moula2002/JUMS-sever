@@ -6,12 +6,12 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-// Use OS temporary directory for Vercel compatibility
-const resumeUploadDir = os.tmpdir();
+// Use uploads directory instead of tmp for persistent storage
+const resumeUploadDir = path.join(__dirname, '../../uploads');
 
 const resumeStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, resumeUploadDir),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+  filename: (req, file, cb) => cb(null, `resume-${Date.now()}-${file.originalname}`)
 });
 
 const resumeFilter = (req, file, cb) => {
@@ -258,7 +258,7 @@ const applyJob = async (req, res) => {
       phone,
       experience,
       coverLetter,
-      resumePath: req.file ? req.file.path : resumeFileName || null
+      resumePath: req.file ? `uploads/${req.file.filename}` : resumeFileName || null
     });
 
     // Construct email content
