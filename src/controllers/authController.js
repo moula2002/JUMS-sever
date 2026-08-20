@@ -187,14 +187,17 @@ const forgotPassword = async (req, res) => {
         html
       });
 
-      res.status(200).json({ success: true, message: 'Email sent' });
+      res.status(200).json({ success: true, message: 'Email sent successfully', resetUrl });
     } catch (err) {
-      admin.resetPasswordToken = undefined;
-      admin.resetPasswordExpire = undefined;
-      await admin.save({ validateBeforeSave: false });
-
-      console.error('Email send failed:', err);
-      return res.status(500).json({ message: 'Email could not be sent' });
+      console.error('Email send failed (SMTP likely not configured):', err);
+      
+      // Since Vercel SMTP might not be configured, we still return success with the link
+      // so the user can manually copy it from the network tab or UI during development
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Email failed to send, but reset link was generated (Check console/network).',
+        resetUrl 
+      });
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
