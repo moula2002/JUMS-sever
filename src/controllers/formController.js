@@ -7,7 +7,7 @@ const sendEmail = require('../utils/sendEmail');
 // @access  Public
 const submitContactForm = async (req, res) => {
   try {
-    const { name, email, subject, message } = req.body;
+    const { name, email, subject, message, phone } = req.body;
 
     // Validate inputs
     if (!name || !email || !message) {
@@ -18,6 +18,7 @@ const submitContactForm = async (req, res) => {
     const contact = await Contact.create({
       name,
       email,
+      phone,
       subject,
       message
     });
@@ -96,7 +97,77 @@ const submitPropertyEnquiry = async (req, res) => {
   }
 };
 
+// @desc    Get all Contacts
+// @route   GET /api/forms/contact
+// @access  Public (Should be private in a real app)
+const getContacts = async (req, res) => {
+  try {
+    const contacts = await Contact.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: contacts });
+  } catch (error) {
+    console.error('Error fetching contacts:', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// @desc    Get single Contact
+// @route   GET /api/forms/contact/:id
+// @access  Public
+const getContactById = async (req, res) => {
+  try {
+    const contact = await Contact.findById(req.params.id);
+    if (!contact) {
+      return res.status(404).json({ success: false, message: 'Contact not found' });
+    }
+    res.status(200).json({ success: true, data: contact });
+  } catch (error) {
+    console.error('Error fetching contact:', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// @desc    Update Contact Status
+// @route   PUT /api/forms/contact/:id/status
+// @access  Public
+const updateContactStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const contact = await Contact.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    );
+    if (!contact) {
+      return res.status(404).json({ success: false, message: 'Contact not found' });
+    }
+    res.status(200).json({ success: true, data: contact });
+  } catch (error) {
+    console.error('Error updating contact status:', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// @desc    Delete Contact
+// @route   DELETE /api/forms/contact/:id
+// @access  Public
+const deleteContact = async (req, res) => {
+  try {
+    const contact = await Contact.findByIdAndDelete(req.params.id);
+    if (!contact) {
+      return res.status(404).json({ success: false, message: 'Contact not found' });
+    }
+    res.status(200).json({ success: true, message: 'Contact deleted' });
+  } catch (error) {
+    console.error('Error deleting contact:', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
 module.exports = {
   submitContactForm,
-  submitPropertyEnquiry
+  submitPropertyEnquiry,
+  getContacts,
+  getContactById,
+  updateContactStatus,
+  deleteContact
 };

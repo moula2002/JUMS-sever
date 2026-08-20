@@ -1,8 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { submitContactForm, submitPropertyEnquiry } = require('../controllers/formController');
+const { 
+  submitContactForm, 
+  submitPropertyEnquiry,
+  getContacts,
+  getContactById,
+  updateContactStatus,
+  deleteContact 
+} = require('../controllers/formController');
 
-router.post('/contact', submitContactForm);
+router.route('/contact')
+  .post(submitContactForm)
+  .get(getContacts);
+
+router.route('/contact/:id')
+  .get(getContactById)
+  .delete(deleteContact);
+
+router.route('/contact/:id/status')
+  .put(updateContactStatus);
+
 router.post('/property-enquiry', submitPropertyEnquiry);
 
 module.exports = router;

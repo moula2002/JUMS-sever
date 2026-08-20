@@ -224,7 +224,7 @@ const applyJob = async (req, res) => {
     const job = await Job.findById(req.params.id);
     if (!job) return res.status(404).json({ message: 'Job not found' });
 
-    const { fullName, email, phone, experience, coverLetter } = req.body;
+    const { fullName, email, phone, experience, coverLetter, resumeFileName } = req.body;
 
     // Save to Database
     const application = await Application.create({
@@ -235,7 +235,7 @@ const applyJob = async (req, res) => {
       phone,
       experience,
       coverLetter,
-      resumePath: req.file ? req.file.path : null
+      resumePath: req.file ? req.file.path : resumeFileName || null
     });
 
     // Construct email content

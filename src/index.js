@@ -7,7 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const formRoutes = require('./routes/formRoutes');
-
+const applicationRoutes = require('./routes/applicationRoutes');
 
 // Connect to database
 connectDB();
@@ -27,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/forms', formRoutes);
+app.use('/api/applications', applicationRoutes);
 
 
 app.get('/', (req, res) => {
