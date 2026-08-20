@@ -33,10 +33,10 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the JUMS Server API!' });
 });
 
-// Conditionally listen on port if not in Vercel production
-if (process.env.NODE_ENV !== 'production') {
+// Listen on port if not in Vercel Serverless environment
+if (process.env.VERCEL !== '1') {
   app.listen(PORT, () => {
-    console.log(`Server is running locally on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
   });
 }
 
