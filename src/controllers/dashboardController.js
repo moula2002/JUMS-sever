@@ -1,5 +1,7 @@
 const Job = require('../models/Job');
 const Admin = require('../models/Admin');
+const Application = require('../models/Application');
+const Contact = require('../models/Contact');
 
 // @desc    Get dashboard statistics
 // @route   GET /api/dashboard
@@ -36,9 +38,52 @@ const getDashboardStats = async (req, res) => {
       time: timeAgo(job.createdAt)
     }));
 
+    // Aggregate chart data for the last 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+
+    const appAgg = await Application.aggregate([
+      { $match: { createdAt: { $gte: sixMonthsAgo } } },
+      { $group: {
+          _id: { month: { $month: "$createdAt" }, year: { $year: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const enqAgg = await Contact.aggregate([
+      { $match: { createdAt: { $gte: sixMonthsAgo } } },
+      { $group: {
+          _id: { month: { $month: "$createdAt" }, year: { $year: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const chartData = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const m = d.getMonth() + 1; // 1-12
+      const y = d.getFullYear();
+      
+      const appCount = appAgg.find(a => a._id.month === m && a._id.year === y)?.count || 0;
+      const enqCount = enqAgg.find(e => e._id.month === m && e._id.year === y)?.count || 0;
+      
+      chartData.push({
+        name: monthNames[m - 1],
+        applications: appCount,
+        enquiries: enqCount
+      });
+    }
+
     res.json({
       stats,
-      recentActivity
+      recentActivity,
+      chartData
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
