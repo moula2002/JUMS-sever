@@ -7,13 +7,17 @@ const nodemailer = require('nodemailer');
  */
 const sendEmail = async (options) => {
   // 1. Create a transporter using environment variables
+  // Check both EMAIL_USER and SMTP_USER for compatibility
+  const user = process.env.EMAIL_USER || process.env.SMTP_USER;
+  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+  
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_PORT || 465,
-    secure: Number(process.env.SMTP_PORT) === 465, // true for 465, false for other ports
+    secure: Number(process.env.SMTP_PORT || 465) === 465, // true for 465, false for other ports
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: user,
+      pass: pass,
     },
     tls: {
       // Do not fail on invalid certs in some serverless environments
@@ -23,8 +27,8 @@ const sendEmail = async (options) => {
 
   // 2. Define the email options
   const mailOptions = {
-    from: `"JUMS Platform" <${process.env.SMTP_USER}>`,
-    to: options.email || process.env.SMTP_TO_ADMIN,
+    from: `"JUMS Platform" <${user}>`,
+    to: options.email || process.env.SMTP_TO_ADMIN || user,
     subject: options.subject,
     text: options.message,
     html: options.html, // Optional HTML version
@@ -47,7 +51,7 @@ const sendEmail = async (options) => {
   return await new Promise((resolve, reject) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
-        console.error(`Error sending email to ${options.email || process.env.SMTP_TO_ADMIN}:`, error);
+        console.error(`Error sending email to ${mailOptions.to}:`, error);
         reject(error);
       } else {
         console.log(`Email sent successfully: ${info.messageId}`);
