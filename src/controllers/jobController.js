@@ -112,6 +112,29 @@ const getJobCategories = async (req, res) => {
   }
 };
 
+// @desc    Get job locations and counts
+// @route   GET /api/jobs/locations
+// @access  Public
+const getJobLocations = async (req, res) => {
+  try {
+    const locations = await Job.aggregate([
+      { $match: { status: 'Active' } },
+      { $group: { _id: '$location', count: { $sum: 1 } } },
+      { $project: { name: '$_id', count: 1, _id: 0 } },
+      { $sort: { count: -1 } }
+    ]);
+
+    const totalJobs = await Job.countDocuments({ status: 'Active' });
+
+    res.json({
+      total: totalJobs,
+      locations
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 const getBaseUrl = (req) => `${req.protocol}://${req.get('host')}`;
 
 // @desc    Create a new job
@@ -279,6 +302,7 @@ module.exports = {
   getJobs,
   getJobById,
   getJobCategories,
+  getJobLocations,
   createJob,
   updateJob,
   deleteJob,

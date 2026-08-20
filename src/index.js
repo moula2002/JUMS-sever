@@ -22,6 +22,10 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Serve temporary files for resume downloads
+const os = require('os');
+app.use('/tmp', express.static(os.tmpdir()));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);

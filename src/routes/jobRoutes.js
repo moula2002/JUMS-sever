@@ -5,6 +5,7 @@ const {
   getJobs,
   getJobById,
   getJobCategories,
+  getJobLocations,
   createJob,
   updateJob,
   deleteJob,
@@ -18,6 +19,9 @@ router.route('/')
 
 router.route('/categories')
   .get(getJobCategories);
+
+router.route('/locations')
+  .get(getJobLocations);
 
 router.route('/:id/apply')
   .post(uploadResume.single('resume'), applyJob);
