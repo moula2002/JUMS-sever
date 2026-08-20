@@ -14,6 +14,22 @@ const adminSchema = mongoose.Schema({
   name: {
     type: String,
     default: 'Admin User',
+  },
+  firstName: {
+    type: String,
+    default: 'Admin',
+  },
+  lastName: {
+    type: String,
+    default: 'User',
+  },
+  bio: {
+    type: String,
+    default: '',
+  },
+  profilePhoto: {
+    type: String,
+    default: '',
   }
 }, {
   timestamps: true,

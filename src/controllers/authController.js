@@ -63,7 +63,92 @@ const initAdmin = async (req, res) => {
   }
 };
 
+// @desc    Get logged in admin profile
+// @route   GET /api/auth/profile
+// @access  Private
+const getProfile = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.admin._id).select('-password');
+    if (admin) {
+      res.json(admin);
+    } else {
+      res.status(404).json({ message: 'Admin not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Update admin profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.admin._id);
+
+    if (admin) {
+      admin.firstName = req.body.firstName || admin.firstName;
+      admin.lastName = req.body.lastName || admin.lastName;
+      admin.name = `${admin.firstName} ${admin.lastName}`.trim();
+      admin.email = req.body.email || admin.email;
+      if (req.body.bio !== undefined) admin.bio = req.body.bio;
+      
+      if (req.file) {
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        admin.profilePhoto = `${baseUrl}/uploads/${req.file.filename}`;
+      }
+
+      const updatedAdmin = await admin.save();
+
+      res.json({
+        _id: updatedAdmin._id,
+        name: updatedAdmin.name,
+        firstName: updatedAdmin.firstName,
+        lastName: updatedAdmin.lastName,
+        email: updatedAdmin.email,
+        bio: updatedAdmin.bio,
+        profilePhoto: updatedAdmin.profilePhoto,
+        token: generateToken(updatedAdmin._id),
+      });
+    } else {
+      res.status(404).json({ message: 'Admin not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Update admin password
+// @route   PUT /api/auth/security
+// @access  Private
+const updatePassword = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.admin._id);
+
+    if (admin) {
+      const { currentPassword, newPassword } = req.body;
+
+      // Verify current password
+      if (!(await admin.matchPassword(currentPassword))) {
+        return res.status(400).json({ message: 'Incorrect current password' });
+      }
+
+      admin.password = newPassword;
+      await admin.save();
+
+      res.json({ message: 'Password updated successfully' });
+    } else {
+      res.status(404).json({ message: 'Admin not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   login,
   initAdmin,
+  getProfile,
+  updateProfile,
+  updatePassword
 };
