@@ -1,5 +1,7 @@
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const sendEmail = require('../utils/sendEmail');
 
 // Generate JWT
 const generateToken = (id) => {
@@ -146,10 +148,99 @@ const updatePassword = async (req, res) => {
   }
 };
 
+// @desc    Forgot Password
+// @route   POST /api/auth/forgotpassword
+// @access  Public
+const forgotPassword = async (req, res) => {
+  try {
+    const admin = await Admin.findOne({ email: req.body.email });
+
+    if (!admin) {
+      return res.status(404).json({ message: 'There is no admin with that email' });
+    }
+
+    // Get reset token
+    const resetToken = admin.getResetPasswordToken();
+
+    await admin.save({ validateBeforeSave: false });
+
+    // Create reset url (change to your frontend domain)
+    // We get the origin from the request or use a hardcoded default for frontend
+    const frontendUrl = req.headers.origin || 'https://jums-adminpanel.vercel.app';
+    const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
+
+    const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a put request to: \n\n ${resetUrl}`;
+    
+    const html = `
+      <h2>Password Reset Request</h2>
+      <p>You requested a password reset for your JUMS Admin Panel account.</p>
+      <p>Click the link below to reset your password:</p>
+      <a href="${resetUrl}" style="display:inline-block;padding:10px 20px;background:#ff6600;color:white;text-decoration:none;border-radius:5px;">Reset Password</a>
+      <p>If you did not request this, please ignore this email.</p>
+    `;
+
+    try {
+      await sendEmail({
+        email: admin.email,
+        subject: 'JUMS Admin - Password Reset Token',
+        message,
+        html
+      });
+
+      res.status(200).json({ success: true, message: 'Email sent' });
+    } catch (err) {
+      admin.resetPasswordToken = undefined;
+      admin.resetPasswordExpire = undefined;
+      await admin.save({ validateBeforeSave: false });
+
+      console.error('Email send failed:', err);
+      return res.status(500).json({ message: 'Email could not be sent' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Reset Password
+// @route   PUT /api/auth/resetpassword/:resettoken
+// @access  Public
+const resetPassword = async (req, res) => {
+  try {
+    // Get hashed token
+    const resetPasswordToken = crypto.createHash('sha256').update(req.params.resettoken).digest('hex');
+
+    const admin = await Admin.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!admin) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Set new password
+    admin.password = req.body.password;
+    admin.resetPasswordToken = undefined;
+    admin.resetPasswordExpire = undefined;
+
+    await admin.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful',
+      token: generateToken(admin._id)
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   login,
   initAdmin,
   getProfile,
   updateProfile,
-  updatePassword
+  updatePassword,
+  forgotPassword,
+  resetPassword
 };
