@@ -262,9 +262,11 @@ const applyJob = async (req, res) => {
       }] : []
     };
 
-    console.log(`Sending job application email for ${fullName}...`);
-    await sendEmail(emailOptions);
-    console.log(`Job application email sent for ${fullName}`);
+    if (!req.body.skipEmail) {
+      console.log(`Sending job application email for ${fullName}...`);
+      await sendEmail(emailOptions);
+      console.log(`Job application email sent for ${fullName}`);
+    }
 
     res.status(200).json({ message: 'Application submitted successfully!', data: application });
   } catch (error) {

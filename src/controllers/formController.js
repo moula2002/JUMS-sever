@@ -33,12 +33,14 @@ const submitContactForm = async (req, res) => {
       <p>${message.replace(/\n/g, '<br/>')}</p>
     `;
 
-    console.log(`Sending contact form email for ${name}...`);
-    await sendEmail({
-      subject: `New Contact Submission: ${subject || 'No Subject'}`,
-      html: emailHtml
-    }); // uses SMTP_TO_ADMIN by default
-    console.log(`Contact form email sent for ${name}`);
+    if (!req.body.skipEmail) {
+      console.log(`Sending contact form email for ${name}...`);
+      await sendEmail({
+        subject: `New Contact Submission: ${subject || 'No Subject'}`,
+        html: emailHtml
+      }); // uses SMTP_TO_ADMIN by default
+      console.log(`Contact form email sent for ${name}`);
+    }
 
     res.status(201).json({ message: 'Contact form submitted successfully!', data: contact });
   } catch (error) {
