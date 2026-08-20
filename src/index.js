@@ -15,6 +15,9 @@ connectDB();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust reverse proxy for HTTPS detection (e.g. Render, Vercel)
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
