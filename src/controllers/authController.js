@@ -22,6 +22,7 @@ const login = async (req, res) => {
         _id: admin._id,
         name: admin.name,
         email: admin.email,
+        profilePhoto: admin.profilePhoto,
         token: generateToken(admin._id),
       });
     } else {
